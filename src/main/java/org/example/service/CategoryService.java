@@ -19,6 +19,11 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
+    public CategoryEntity getById(int id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+    }
+
     public CategoryEntity create(CategoryCreateDTO dto) {
         CategoryEntity entity = new CategoryEntity();
         entity.setCreationTime(LocalDateTime.now());
@@ -28,6 +33,7 @@ public class CategoryService {
         categoryRepository.save(entity);
         return entity;
     }
+
 
     public CategoryEntity edit(CategoryEditDTO dto) {
         CategoryEntity entity = categoryRepository.findById(dto.getId())

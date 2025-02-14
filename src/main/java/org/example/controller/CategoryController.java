@@ -21,13 +21,19 @@ public class CategoryController {
         return categoryService.getList();
     }
 
+    @GetMapping("/{id}")
+    public CategoryEntity getById(@PathVariable int id) {
+        return categoryService.getById(id);
+    }
+
     @PostMapping
-    public CategoryEntity create(CategoryCreateDTO dto) {
+    public CategoryEntity create(@RequestBody CategoryCreateDTO dto) {
         return categoryService.create(dto);
     }
 
-    @PutMapping
-    public CategoryEntity edit(CategoryEditDTO dto) {
+    @PutMapping("/{id}")
+    public CategoryEntity edit(@PathVariable int id, @RequestBody CategoryEditDTO dto) {
+        dto.setId(id);
         return categoryService.edit(dto);
     }
 
