@@ -1,9 +1,11 @@
 package org.example.entites;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Entity
@@ -24,4 +26,8 @@ public class CategoryEntity {
 
     @Column(length = 40000)
     private String description;
+
+    @OneToMany(mappedBy="category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<ProductEntity> products;
 }

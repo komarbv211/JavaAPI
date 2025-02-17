@@ -18,6 +18,7 @@ public class CategoryController {
 
     @GetMapping
     public List<CategoryEntity> getAllCategories() {
+
         return categoryService.getList();
     }
 
