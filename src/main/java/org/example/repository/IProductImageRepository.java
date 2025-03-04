@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface IProductImageRepository extends JpaRepository<ProductImageEntity,Integer> {
     Optional<ProductImageEntity> findByName(String name);
+
 }
