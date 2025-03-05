@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,57 +73,51 @@ public class ProductService {
         cat.setId(product.getCategoryId());
         entity.setCategory(cat);
 
-        List<String> oldImageNames = product.getImages().stream()
-                .filter(img -> "old-image".equals(img.getContentType()))
-                .map(MultipartFile::getOriginalFilename)
-                .toList();
+        // Отримуємо список старих зображень у базі
+        Map<String, ProductImageEntity> existingImages = entity.getImages().stream()
+                .collect(Collectors.toMap(ProductImageEntity::getName, img -> img));
 
         List<ProductImageEntity> updatedImages = new ArrayList<>();
-        int priority = 1;
 
-        // Видалення фото, яких більше немає у списку
-        var imagesToRemove = entity.getImages().stream()
-                .filter(img -> !oldImageNames.contains(img.getName()))
-                .toList();
+        for (int i = 0; i < product.getImages().size(); i++) {
+            var img = product.getImages().get(i);
 
-        for (var img : imagesToRemove) {
-            fileService.remove(img.getName());
-            productImageRepository.delete(img);
-        }
-
-        // Оновлення пріоритетів старих фото
-        for (var img : entity.getImages()) {
-            if (oldImageNames.contains(img.getName())) {
-                int index = oldImageNames.indexOf(img.getName());
-                if (index != -1) {
-                    img.setPriority(index);
-                    updatedImages.add(img);
+            if ("old-image".equals(img.getContentType())) {
+                // Оновлення пріоритету старого зображення
+                var imageName = img.getOriginalFilename();
+                if (existingImages.containsKey(imageName)) {
+                    var oldImage = existingImages.get(imageName);
+                    oldImage.setPriority(i);
+                    updatedImages.add(oldImage);
                 }
-            }
-        }
-
-        // Додавання нових фото
-        for (var img : product.getImages()) {
-            if (!"old-image".equals(img.getContentType())) {
+            } else {
+                // Додавання нового зображення
                 var imageName = fileService.load(img);
                 var newImage = new ProductImageEntity();
                 newImage.setName(imageName);
-                int newPriority = product.getImages().indexOf(img);
-                if (newPriority != -1) {
-                    newImage.setPriority(newPriority);
-                }
+                newImage.setPriority(i);
                 newImage.setProduct(entity);
                 updatedImages.add(newImage);
             }
         }
 
-        // Збереження оновлених фото
+        // Видалення зображень, яких немає в оновленому списку
+        for (var img : entity.getImages()) {
+            if (!updatedImages.contains(img)) {
+                fileService.remove(img.getName());
+                productImageRepository.delete(img);
+            }
+        }
+
+        // Оновлення списку у продукті
+        entity.getImages().clear();
+        entity.getImages().addAll(updatedImages);
+
+        // Збереження змін
         productImageRepository.saveAll(updatedImages);
         productRepository.save(entity);
         return true;
     }
-
-
 
     public boolean deleteProduct(Integer id) {
         var res = productRepository.findById(id);
