@@ -88,6 +88,7 @@ public class ProductService {
                 if (existingImages.containsKey(imageName)) {
                     var oldImage = existingImages.get(imageName);
                     oldImage.setPriority(i);
+                    productImageRepository.save(oldImage);
                     updatedImages.add(oldImage);
                 }
             } else {
@@ -97,25 +98,19 @@ public class ProductService {
                 newImage.setName(imageName);
                 newImage.setPriority(i);
                 newImage.setProduct(entity);
-                updatedImages.add(newImage);
+                productImageRepository.save(newImage);
             }
         }
-
+        List<Integer> removeIds = new ArrayList<>();
         // Видалення зображень, яких немає в оновленому списку
         for (var img : entity.getImages()) {
             if (!updatedImages.contains(img)) {
                 fileService.remove(img.getName());
-                productImageRepository.delete(img);
+                removeIds.add(img.getId());
             }
         }
 
-        // Оновлення списку у продукті
-        entity.getImages().clear();
-        entity.getImages().addAll(updatedImages);
-
-        // Збереження змін
-        productImageRepository.saveAll(updatedImages);
-        productRepository.save(entity);
+        productImageRepository.deleteAllByIdInBatch(removeIds);
         return true;
     }
 
