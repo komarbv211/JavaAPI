@@ -22,8 +22,15 @@ public class DatabaseSeeder {
     private final IProductImageRepository productImageRepository;
     private final FileService fileService;
 
+    private final UserSeeder userSeeder;
+    private final RoleSeeder roleSeeder;
+
     @PostConstruct
     public void seed() {
+
+        roleSeeder.seed();
+        userSeeder.seed();
+
         if (categoryRepository.count() == 0) {
 
             var electronics = fileService.load("https://laluna.com.ua/image/cache/catalog/easyphoto/2811202310_photo_2023-11-28_14-27-25-crop-720x1080.jpg");
