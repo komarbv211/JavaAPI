@@ -26,15 +26,13 @@ public class UserService {
     }
 
     // Аутентифікація користувача
-    public String authenticateUser(UserAuthDto userEntity) {
-        UserEntity foundUser = userRepository.findByUsername(userEntity.getUsername())
-                .orElseThrow(() -> new RuntimeException("Користувач не знайдений"));
-
-        if (!passwordEncoder.matches(userEntity.getPassword(), foundUser.getPassword())) {
-            throw new RuntimeException("Невірний пароль");
+    public String authenticateUser(UserAuthDto userAuthDto) {
+        UserEntity user = userRepository.findByUsername(userAuthDto.getUsername()).orElseThrow(() -> new RuntimeException("User not found"));
+        if (passwordEncoder.matches(userAuthDto.getPassword(), user.getPassword())) {
+            return jwtService.generateAccessToken(user);
+        } else {
+            throw new RuntimeException("Invalid credentials");
         }
-
-        // Генерація JWT токену
-        return jwtService.generateAccessToken(foundUser);
     }
+
 }
