@@ -3,7 +3,7 @@ package org.example.service;
 import lombok.RequiredArgsConstructor;
 import org.example.config.security.JwtService;
 import org.example.dto.user.UserAuthDto;
-import org.example.dto.user.UserCreateDto;
+import org.example.dto.user.UserRegisterDto;
 import org.example.entites.RoleEntity;
 import org.example.entites.UserEntity;
 import org.example.entites.UserRoleEntity;
@@ -24,27 +24,14 @@ public class UserService {
     private final JwtService jwtService;
 
     // Реєстрація нового користувача
-    public UserEntity registerUser(UserCreateDto dto) {
-        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
-            throw new RuntimeException("Користувач з таким іменем вже існує!");
+    public void registerUser(UserRegisterDto dto) {
+        if (userRepository.existsByUsername(dto.getUsername())) {
+            throw new RuntimeException("Користувач з таким ім'ям вже існує");
         }
-
-        String encodedPassword = passwordEncoder.encode(dto.getPassword());
-
-        UserEntity user = new UserEntity();
-        user.setUsername(dto.getUsername());
-        user.setPassword(encodedPassword);
-        userRepository.save(user);
-
-        RoleEntity role = roleRepository.findByName(dto.getRole())
-                .orElseThrow(() -> new RuntimeException("Роль не знайдена"));
-
-        UserRoleEntity userRole = new UserRoleEntity();
-        userRole.setUser(user);
-        userRole.setRole(role);
-        userRoleRepository.save(userRole);
-
-        return user;
+        var userEntity = new UserEntity();
+        userEntity.setUsername(dto.getUsername());
+        userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        userRepository.save(userEntity);
     }
 
     // Аутентифікація користувача

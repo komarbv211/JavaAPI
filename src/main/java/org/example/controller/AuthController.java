@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.config.security.JwtService;
 import org.example.dto.user.UserAuthDto;
-import org.example.dto.user.UserCreateDto;
+import org.example.dto.user.UserRegisterDto;
 import org.example.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +19,9 @@ public class AuthController {
 
     // Реєстрація нового користувача
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody UserCreateDto userEntity) {
+    public ResponseEntity<String> register(@Valid @RequestBody UserRegisterDto dto) {
         try {
-            userService.registerUser(userEntity);
+            userService.registerUser(dto);
             return ResponseEntity.ok("Користувач успішно зареєстрований");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Помилка при реєстрації: " + e.getMessage());
