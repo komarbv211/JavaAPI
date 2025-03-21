@@ -73,8 +73,7 @@ public class UserService {
                 userEntity.setPassword("");
                 userRepository.save(userEntity);
             }
-            var jwt = jwtService.generateAccessToken(userEntity);
-            return jwt;
+            return jwtService.generateAccessToken(userEntity);
         }
         return  null;
     }

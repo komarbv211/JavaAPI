@@ -10,6 +10,7 @@ import org.example.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.Map;
 
 @RestController
@@ -33,26 +34,27 @@ public class AuthController {
         }
     }
 
-    // Логін користувача та отримання JWT токену
+    // AuthController.java
+
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserAuthDto userEntity) {
+    public ResponseEntity<Map<String, String>> login(@RequestBody UserAuthDto userEntity) {
         try {
-            // Перевірка, чи існує користувач і чи правильні дані
             String token = userService.authenticateUser(userEntity);
-            return ResponseEntity.ok("Bearer " + token);
+            return ResponseEntity.ok(Collections.singletonMap("token", "Bearer " + token));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Помилка при вході: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "Помилка при вході: " + e.getMessage()));
         }
     }
 
     @PostMapping("/google")
-    public ResponseEntity<String> google_login(@RequestBody UserGoogleAuthDto userEntity) {
+    public ResponseEntity<Map<String, String>> google_login(@RequestBody UserGoogleAuthDto userEntity) {
         try {
-            // Перевірка, чи існує користувач і чи правильні дані
             String token = userService.signInGoogle(userEntity.getToken());
-            return ResponseEntity.ok("Bearer " + token);
+            return ResponseEntity.ok(Collections.singletonMap("token", "Bearer " + token));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Помилка при вході: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "Помилка при вході: " + e.getMessage()));
         }
     }
 }
