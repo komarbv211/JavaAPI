@@ -30,6 +30,7 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(format("%s,%s", user.getId(), user.getUsername()))
+                .claim("id", user.getId())
                 .claim("email", user.getUsername())
                 .claim("roles", roles.stream()
                         .map(role -> role.getRole().getName())

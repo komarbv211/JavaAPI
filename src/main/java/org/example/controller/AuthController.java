@@ -37,7 +37,7 @@ public class AuthController {
     // AuthController.java
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody UserAuthDto userEntity) {
+    public ResponseEntity<?> login(@RequestBody UserAuthDto userEntity) {
         try {
             String token = userService.authenticateUser(userEntity);
             return ResponseEntity.ok(Collections.singletonMap("token", "Bearer " + token));
@@ -48,7 +48,7 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    public ResponseEntity<Map<String, String>> google_login(@RequestBody UserGoogleAuthDto userEntity) {
+    public ResponseEntity<?> google_login(@RequestBody UserGoogleAuthDto userEntity) {
         try {
             String token = userService.signInGoogle(userEntity.getToken());
             return ResponseEntity.ok(Collections.singletonMap("token", "Bearer " + token));
