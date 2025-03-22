@@ -3,6 +3,8 @@ package org.example.service;
 import lombok.RequiredArgsConstructor;
 import org.example.config.security.JwtService;
 import org.example.dto.user.UserAuthDto;
+import org.example.dto.user.UserItemDto;
+import org.example.dto.user.UserPhotoDto;
 import org.example.dto.user.UserRegisterDto;
 import org.example.entites.UserEntity;
 import org.example.repository.IUserRepository;
@@ -17,9 +19,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +32,7 @@ public class UserService {
     private final IUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final FileService fileService;
 
     @Value("${google.api.userinfo}")
     private String googleUserInfoUrl;
@@ -76,5 +81,43 @@ public class UserService {
             return jwtService.generateAccessToken(userEntity);
         }
         return  null;
+    }
+
+    public String updateUserPhoto(UserPhotoDto dto) {
+        Optional<UserEntity> userOptional = userRepository.findById(dto.getUserId());
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("Користувач не знайдений");
+        }
+
+        UserEntity user = userOptional.get();
+        String oldPhoto = user.getPhoto();
+        String newPhoto = fileService.replace(oldPhoto, dto.getPhoto());
+
+        user.setPhoto(newPhoto);
+        userRepository.save(user);
+        return newPhoto;
+    }
+
+    public void removeUserPhoto(Long userId) {
+        Optional<UserEntity> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("Користувач не знайдений");
+        }
+
+        UserEntity user = userOptional.get();
+        fileService.remove(user.getPhoto());
+        user.setPhoto(null);
+        userRepository.save(user);
+    }
+    public UserItemDto getPhotoById(Long userId) {
+        return userRepository.findById(userId)
+                .map(user -> {
+                    UserItemDto dto = new UserItemDto();
+                    dto.setId(user.getId());
+                    dto.setUsername(user.getUsername());
+                    dto.setPhoto(user.getPhoto());
+                    return dto;
+                })
+                .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
     }
 }
