@@ -2,6 +2,8 @@ package org.example.entites;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -22,6 +24,12 @@ public class UserEntity {
 
     @Column(nullable = true)
     private String photo;
+
+    @Column(nullable = false)
+    private LocalDateTime registrationDate;
+
+    @Column(nullable = false)
+    private String registrationMethod;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserRoleEntity> userRoles;

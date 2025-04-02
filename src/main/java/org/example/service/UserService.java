@@ -7,7 +7,10 @@ import org.example.dto.user.UserItemDto;
 import org.example.dto.user.UserPhotoDto;
 import org.example.dto.user.UserRegisterDto;
 import org.example.entites.UserEntity;
+import org.example.mapper.IUserMapper;
 import org.example.repository.IUserRepository;
+import org.hibernate.Hibernate;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,9 +22,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
+
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,6 +35,7 @@ import java.util.Optional;
 public class UserService {
 
     private final IUserRepository userRepository;
+    private final IUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final FileService fileService;
@@ -37,16 +43,45 @@ public class UserService {
     @Value("${google.api.userinfo}")
     private String googleUserInfoUrl;
 
+
+    public List<UserItemDto> getList() {
+        List<UserEntity> users = userRepository.findAllWithRoles();
+        users.forEach(user -> Hibernate.initialize(user.getUserRoles()));  // Завантажуємо ролі
+        return userMapper.toDto(users);
+    }
+
+    public UserItemDto getById(Long id) {
+        var entity = userRepository.findByIdWithRoles(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Hibernate.initialize(entity.getUserRoles()); // Завантажуємо ролі
+        return userMapper.toDto(entity);
+    }
+
     // Реєстрація нового користувача
-    public void registerUser(UserRegisterDto dto) {
+    public void registerUser(@NotNull UserRegisterDto dto) {
         if (userRepository.existsByUsername(dto.getUsername())) {
             throw new RuntimeException("Користувач з таким ім'ям вже існує");
         }
+
         var userEntity = new UserEntity();
         userEntity.setUsername(dto.getUsername());
         userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        userEntity.setRegistrationDate(LocalDateTime.now());
+        userEntity.setRegistrationMethod("Manual");
+
+        if (dto.getPhoto() != null && !dto.getPhoto().isEmpty()) {
+            try {
+                String photoPath = fileService.load(dto.getPhoto());
+                userEntity.setPhoto(photoPath);
+            } catch (Exception e) {
+                throw new RuntimeException("Помилка завантаження фото: " + e.getMessage());
+            }
+        }
+
         userRepository.save(userEntity);
     }
+
+
 
     // Аутентифікація користувача
     public String authenticateUser(UserAuthDto userEntity) {
@@ -120,4 +155,21 @@ public class UserService {
                 })
                 .orElseThrow(() -> new RuntimeException("Користувача не знайдено"));
     }
+    public void deleteUser(Long userId) {
+        Optional<UserEntity> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("Користувач не знайдений");
+        }
+
+        UserEntity user = userOptional.get();
+
+        // Видалення фото, якщо воно є
+        if (user.getPhoto() != null) {
+            fileService.remove(user.getPhoto());
+        }
+
+        // Видалення користувача з БД
+        userRepository.delete(user);
+    }
+
 }
